@@ -10,10 +10,10 @@ max_path = 0
 [File]
 black_suffix = "@tmp", "@eaDir", ".SynologyWorkingDirectory", "#recycle", "desktop.ini", ".ds_store", "Icon\r", "thumbs.db", "$Recycle.Bin", "@sharebin", "tmp", "temp", "System Volume Information", "Program Files", "Program Files (x86)", "ProgramData", "#snapshot", ".lnk", ".pst", ".swp"
 black_prefix = "~"
-black_ext = "tmp", "temp", "swp", "lnk", "pst"
+black_ext = "tmp", "temp", "swp", "lnk", "pst", "pyc", "pyo"
 max_size = 0
 
 [Directory]
-black_name = ".cache", ".node-gyp", "@tmp", "@eaDir", ".SynologyWorkingDirectory", "#recycle", "desktop.ini", ".ds_store", "Icon\r", "thumbs.db", "$Recycle.Bin", "@sharebin", "System Volume Information", "Program Files", "Program Files (x86)", "ProgramData", "#snapshot", ".git", "node_modules"
+black_name = ".cache", ".node-gyp", "@tmp", "@eaDir", ".SynologyWorkingDirectory", "#recycle", "desktop.ini", ".ds_store", "Icon\r", "thumbs.db", "$Recycle.Bin", "@sharebin", "System Volume Information", "Program Files", "Program Files (x86)", "ProgramData", "#snapshot", ".git", "node_modules", ".venv", "venv", "__pycache__", ".pytest_cache", ".ruff_cache", ".mypy_cache", "dist", "build", ".next", ".svelte-kit", ".turbo", ".vite", ".parcel-cache", ".gradle", ".idea", "coverage", ".playwright-mcp"
 
 [EA]
