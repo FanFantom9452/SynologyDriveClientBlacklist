@@ -43,24 +43,25 @@
     <label class="mode"><input type="radio" name="mode" value="merge" checked><span><strong data-t="merge"></strong><br><span class="muted" data-t="mergeHint"></span></span></label>
     <label class="mode"><input type="radio" name="mode" value="overwrite"><span><strong data-t="overwrite"></strong><br><span class="muted" data-t="overwriteHint"></span></span></label>
     <div id="groupsBlock"><h2 data-t="groups"></h2><div id="groups"></div></div>
-    <div class="actions"><button id="previewBtn" type="button" data-t="preview"></button><button id="applyBtn" type="button" class="primary" data-t="apply"></button></div>
+    <div class="actions"><button id="previewBtn" type="button" class="primary" data-t="preview"></button></div>
     <div id="preview"></div>
+    <div class="actions"><button id="applyBtn" type="button" class="primary" data-t="apply" hidden></button></div>
     <h2 data-t="rollback"></h2><div id="rollback"></div>
   </div>
   <div class="actions"><button id="finish" type="button" data-t="finish"></button></div>
 </main>
 <script>
 const I18N = {
-  zh: { title:"Synology Drive 同步規則工具", subtitle:"掃描本機設定、選擇要排除的項目，並在備份後套用。所有動作都只在這台電腦上進行。", sessions:"Session 與同步資料夾", mode:"套用方式", merge:"合併（建議）", mergeHint:"只新增勾選的規則，保留你原本的所有規則。", overwrite:"完全覆蓋", overwriteHint:"以內建的完整規則取代整個檔案，原本的自訂規則會消失。", groups:"規則組", preview:"預覽變動", apply:"備份並套用", rollback:"還原備份", restore:"還原", finish:"完成並關閉", lang:"English", unknownRoot:"同步資料夾未知", missing:n=>`缺 ${n} 組規則`, complete:"規則組已齊全", current:"目前規則", backupsNone:"沒有備份", notInstalled:"找不到 Synology Drive Client 的設定。請先安裝並完成同步設定。", noSessions:"找不到任何 Session。請先在 Synology Drive Client 設定同步。", running:"Synology Drive 正在執行：套用前需要從系統匣結束。", waiting:"請從系統匣結束 Synology Drive（不要用工作管理員強制結束）。偵測到全部關閉後會自動繼續。", cancel:"取消", noChange:"沒有變動", add:"新增", remove:"移除", overwriteWarn:"注意：這個 Session 有規則會被移除。", done:"已套用。請重新開啟 Synology Drive Client 讓規則生效。", restored:"已還原。請重新開啟 Synology Drive Client。", backup:"備份", failed:"失敗", closed:"工具已關閉，可以關掉這個分頁。", lost:"工具已停止，請重新執行。", pick:"請至少選擇一個 Session 和一組規則。", confirmOverwrite:"確定要完全覆蓋？原本的自訂規則會消失（會先備份）。", confirmRestore:"確定要還原這個備份？目前的規則會先備份。", unverified:"實驗性：尚未確認 Synology 會保留這條規則", previewFirst:"請先按「預覽變動」確認內容，勾選有變動時也要重新預覽。", error:"發生錯誤：",
+  zh: { title:"Synology Drive 同步規則工具", subtitle:"掃描本機設定、選擇要排除的項目，並在備份後套用。所有動作都只在這台電腦上進行。", sessions:"Session 與同步資料夾", mode:"套用方式", merge:"合併（建議）", mergeHint:"只新增勾選的規則，保留你原本的所有規則。", overwrite:"完全覆蓋", overwriteHint:"以內建的完整規則取代整個檔案，原本的自訂規則會消失。", groups:"規則組", preview:"預覽變動", apply:"備份並套用", rollback:"還原備份", restore:"還原", finish:"完成並關閉", lang:"English", unknownRoot:"同步資料夾未知", missing:n=>`缺 ${n} 組規則`, complete:"規則組已齊全", current:"目前規則", backupsNone:"沒有備份", notInstalled:"找不到 Synology Drive Client 的設定。請先安裝並完成同步設定。", noSessions:"找不到任何 Session。請先在 Synology Drive Client 設定同步。", running:"Synology Drive 正在執行：套用前需要從系統匣結束。", waiting:"請從系統匣結束 Synology Drive（不要用工作管理員強制結束）。偵測到全部關閉後會自動繼續。", cancel:"取消", noChange:"沒有變動", add:"新增", remove:"移除", overwriteWarn:"注意：這個 Session 有規則會被移除。", done:"已套用。請重新開啟 Synology Drive Client 讓規則生效。", restored:"已還原。請重新開啟 Synology Drive Client。", backup:"備份", failed:"失敗", closed:"工具已關閉，可以關掉這個分頁。", lost:"工具已停止，請重新執行。", pick:"請至少選擇一個 Session 和一組規則。", confirmOverwrite:"確定要完全覆蓋？原本的自訂規則會消失（會先備份）。", confirmRestore:"確定要還原這個備份？目前的規則會先備份。", unverified:"實驗性：尚未確認 Synology 會保留這條規則", error:"發生錯誤：",
     g:{ git:["Git 資料夾","資料庫逐檔同步會損壞 repo，程式碼請用 git push／pull。"], worktrees:["Git 工作樹資料夾","工作樹指標是絕對路徑，到別台機器必壞。"], gitPointerFile:["Git 工作樹的 .git 檔案","資料夾規則擋不到這個指標檔。"], fankeel:["fankeel 狀態","一直重寫又含絕對路徑，換機請用 migrate.js 打包。"], node:["Node 套件","npm install 就能重建，且含平台專屬檔案。"], python:["Python 環境與快取","虛擬環境換機器會壞，快取可自動重建。"], build:["建置輸出","可從原始碼重新產生，又大又常變。"], tools:["工具與 IDE 快取","多半只對這台機器有意義。"], system:["系統與暫存項目","NAS、Windows 的系統項目，以及暫存檔和捷徑。"] } },
-  en: { title:"Synology Drive Filter Tool", subtitle:"Scan local settings, choose what to exclude, and apply with a backup. Everything stays on this computer.", sessions:"Sessions and synced folders", mode:"How to apply", merge:"Merge (recommended)", mergeHint:"Adds only the selected rules and keeps every rule you already have.", overwrite:"Overwrite", overwriteHint:"Replaces the whole file with the built-in rules. Your custom rules are lost.", groups:"Rule groups", preview:"Preview changes", apply:"Back up and apply", rollback:"Restore a backup", restore:"Restore", finish:"Finish and close", lang:"繁體中文", unknownRoot:"Synced folder unknown", missing:n=>`${n} rule group${n===1?"":"s"} missing`, complete:"All rule groups present", current:"Current rules", backupsNone:"No backups", notInstalled:"Synology Drive Client settings were not found. Install it and set up sync first.", noSessions:"No sessions found. Set up sync in Synology Drive Client first.", running:"Synology Drive is running. Quit it from the system tray before applying.", waiting:"Quit Synology Drive from the system tray (do not force-kill it in Task Manager). This continues automatically once it has closed.", cancel:"Cancel", noChange:"No changes", add:"Add", remove:"Remove", overwriteWarn:"Warning: this session will lose some rules.", done:"Applied. Reopen Synology Drive Client for the rules to take effect.", restored:"Restored. Reopen Synology Drive Client.", backup:"Backup", failed:"Failed", closed:"The tool has stopped. You can close this tab.", lost:"The tool has stopped. Run it again.", pick:"Select at least one session and one rule group.", confirmOverwrite:"Overwrite completely? Your custom rules will be lost (a backup is made first).", confirmRestore:"Restore this backup? Current rules are backed up first.", unverified:"Experimental: not yet confirmed that Synology keeps this rule", previewFirst:"Press Preview changes first, and again after changing a selection.", error:"Error: ",
+  en: { title:"Synology Drive Filter Tool", subtitle:"Scan local settings, choose what to exclude, and apply with a backup. Everything stays on this computer.", sessions:"Sessions and synced folders", mode:"How to apply", merge:"Merge (recommended)", mergeHint:"Adds only the selected rules and keeps every rule you already have.", overwrite:"Overwrite", overwriteHint:"Replaces the whole file with the built-in rules. Your custom rules are lost.", groups:"Rule groups", preview:"Preview changes", apply:"Back up and apply", rollback:"Restore a backup", restore:"Restore", finish:"Finish and close", lang:"繁體中文", unknownRoot:"Synced folder unknown", missing:n=>`${n} rule group${n===1?"":"s"} missing`, complete:"All rule groups present", current:"Current rules", backupsNone:"No backups", notInstalled:"Synology Drive Client settings were not found. Install it and set up sync first.", noSessions:"No sessions found. Set up sync in Synology Drive Client first.", running:"Synology Drive is running. Quit it from the system tray before applying.", waiting:"Quit Synology Drive from the system tray (do not force-kill it in Task Manager). This continues automatically once it has closed.", cancel:"Cancel", noChange:"No changes", add:"Add", remove:"Remove", overwriteWarn:"Warning: this session will lose some rules.", done:"Applied. Reopen Synology Drive Client for the rules to take effect.", restored:"Restored. Reopen Synology Drive Client.", backup:"Backup", failed:"Failed", closed:"The tool has stopped. You can close this tab.", lost:"The tool has stopped. Run it again.", pick:"Select at least one session and one rule group.", confirmOverwrite:"Overwrite completely? Your custom rules will be lost (a backup is made first).", confirmRestore:"Restore this backup? Current rules are backed up first.", unverified:"Experimental: not yet confirmed that Synology keeps this rule", error:"Error: ",
     g:{ git:["Git folders","Syncing the database file by file corrupts repos. Use git push and pull."], worktrees:["Git worktree folders","Worktree pointers are absolute paths and break on another machine."], gitPointerFile:["Git worktree .git files","Folder rules cannot catch this pointer file."], fankeel:["fankeel state","Rewritten constantly and holds absolute paths. Move it with migrate.js."], node:["Node packages","Rebuilt by npm install and contain platform-specific files."], python:["Python environments and caches","Virtual environments break across machines; caches rebuild themselves."], build:["Build output","Regenerated from source, large and changing often."], tools:["Tool and IDE caches","Mostly meaningful on this machine only."], system:["System and temporary items","NAS and Windows system items, temporary files and shortcuts."] } }
 };
 
 const token = new URLSearchParams(location.search).get("t");
 history.replaceState(null, "", location.pathname);
 let lang = (navigator.language || "").toLowerCase().startsWith("zh") ? "zh" : "en";
-let scan = null, previewed = false, waitTimer = null, stopped = false;
+let scan = null, waitTimer = null, stopped = false;
 const $ = id => document.getElementById(id);
 const T = () => I18N[lang];
 const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text !== undefined) n.textContent = text; return n; };
@@ -80,7 +81,7 @@ function stopWaiting() { clearInterval(waitTimer); waitTimer = null; say(""); }
 function fail(e) { say(T().error + (e.message || e)); }
 function selected(name) { return [...document.querySelectorAll(`input[name=${name}]:checked`)].map(i => i.value); }
 function request() { const mode = selected("mode")[0]; return { mode, sessions: selected("session"), groups: mode === "merge" ? selected("group") : [] }; }
-function invalidate() { previewed = false; $("preview").replaceChildren(); }
+function invalidate() { $("applyBtn").hidden = true; $("preview").replaceChildren(); }
 
 function chips(parent, values) { values.forEach(v => parent.append(el("code", "", v))); }
 function render() {
@@ -152,7 +153,9 @@ async function preview() {
       if (c.removed.length) { const r = el("p", "removed", t.remove + " "); chips(r, c.removed); box.append(r); }
     });
   });
-  previewed = true; say("");
+  $("applyBtn").hidden = !data.previews.some(p => p.changes.length);
+  say("");
+  box.scrollIntoView({ block:"start" });
 }
 
 function waitThen(action) {
@@ -167,7 +170,6 @@ function waitThen(action) {
 
 async function apply() {
   if (waitTimer) return say(T().waiting, true);
-  if (!previewed) return say(T().previewFirst);
   const req = request();
   if (req.mode === "overwrite" && !confirm(T().confirmOverwrite)) return;
   await runApply(req);
