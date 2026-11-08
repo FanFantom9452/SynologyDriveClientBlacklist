@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Synology Drive Filter Tool</title>
+<style>
+  :root { --bg:#fff; --fg:#1c1c1a; --muted:#67665f; --line:#e2e0d8; --soft:#f6f5f0; --accent:#0b6b53; --on:#fff; --warnbg:#fdf1d8; --warn:#6f4400; --bad:#a32020; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#1b1b19; --fg:#ecebe4; --muted:#a8a69c; --line:#37362f; --soft:#26251f; --accent:#7fdcc0; --on:#10231d; --warnbg:#3b2d12; --warn:#f5cf8a; --bad:#ff9a9a; } }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.6 system-ui,"Microsoft JhengHei",sans-serif; }
+  main { max-width:860px; margin:0 auto; padding:32px 20px 72px; }
+  header { display:flex; justify-content:space-between; align-items:center; gap:16px; }
+  h1 { font-size:24px; margin:0; }
+  h2 { font-size:17px; margin:32px 0 10px; }
+  p { margin:0 0 8px; }
+  .muted { color:var(--muted); font-size:14px; }
+  .notice { background:var(--warnbg); color:var(--warn); padding:12px 16px; border-radius:8px; margin:12px 0; }
+  .item { display:flex; gap:12px; align-items:flex-start; padding:12px 0; border-top:1px solid var(--line); }
+  .item > div { min-width:0; flex:1; }
+  .item input { margin-top:5px; width:18px; height:18px; flex:none; }
+  .title { font-weight:600; overflow-wrap:anywhere; }
+  code { font:13px ui-monospace,Consolas,monospace; background:var(--soft); padding:1px 5px; border-radius:4px; display:inline-block; margin:2px 3px 2px 0; overflow-wrap:anywhere; }
+  button { font:inherit; padding:9px 16px; border-radius:8px; border:1px solid var(--line); background:var(--bg); color:inherit; cursor:pointer; }
+  button.primary { background:var(--accent); color:var(--on); border-color:var(--accent); }
+  button:disabled { opacity:.5; cursor:not-allowed; }
+  .actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; }
+  select { font:inherit; padding:6px; color:inherit; background:var(--bg); border:1px solid var(--line); border-radius:6px; max-width:100%; }
+  .added { color:var(--accent); } .removed { color:var(--bad); }
+  details { margin-top:6px; } summary { cursor:pointer; color:var(--muted); font-size:14px; }
+  label.mode { display:flex; gap:10px; padding:6px 0; align-items:flex-start; }
+  #status { position:sticky; top:0; z-index:1; background:var(--bg); }
+</style>
+</head>
+<body>
+<main>
+  <header><h1 data-t="title"></h1><button id="lang" type="button"></button></header>
+  <p class="muted" data-t="subtitle"></p>
+  <div id="status" role="status"></div>
+  <div id="app" hidden>
+    <h2 data-t="sessions"></h2><div id="sessions"></div>
+    <h2 data-t="mode"></h2>
+    <label class="mode"><input type="radio" name="mode" value="merge" checked><span><strong data-t="merge"></strong><br><span class="muted" data-t="mergeHint"></span></span></label>
+    <label class="mode"><input type="radio" name="mode" value="overwrite"><span><strong data-t="overwrite"></strong><br><span class="muted" data-t="overwriteHint"></span></span></label>
+    <div id="groupsBlock"><h2 data-t="groups"></h2><div id="groups"></div></div>
+    <div class="actions"><button id="previewBtn" type="button" data-t="preview"></button><button id="applyBtn" type="button" class="primary" data-t="apply"></button></div>
+    <div id="preview"></div>
+    <h2 data-t="rollback"></h2><div id="rollback"></div>
+  </div>
+  <div class="actions"><button id="finish" type="button" data-t="finish"></button></div>
+</main>
+<script>
+const I18N = {
+  zh: { title:"Synology Drive 同步規則工具", subtitle:"掃描本機設定、選擇要排除的項目，並在備份後套用。所有動作都只在這台電腦上進行。", sessions:"Session 與同步資料夾", mode:"套用方式", merge:"合併（建議）", mergeHint:"只新增勾選的規則，保留你原本的所有規則。", overwrite:"完全覆蓋", overwriteHint:"以內建的完整規則取代整個檔案，原本的自訂規則會消失。", groups:"規則組", preview:"預覽變動", apply:"備份並套用", rollback:"還原備份", restore:"還原", finish:"完成並關閉", lang:"English", unknownRoot:"同步資料夾未知", missing:n=>`缺 ${n} 組規則`, complete:"規則組已齊全", current:"目前規則", backupsNone:"沒有備份", notInstalled:"找不到 Synology Drive Client 的設定。請先安裝並完成同步設定。", noSessions:"找不到任何 Session。請先在 Synology Drive Client 設定同步。", running:"Synology Drive 正在執行：套用前需要從系統匣結束。", waiting:"請從系統匣結束 Synology Drive（不要用工作管理員強制結束）。偵測到全部關閉後會自動繼續。", cancel:"取消", noChange:"沒有變動", add:"新增", remove:"移除", overwriteWarn:"注意：這個 Session 有規則會被移除。", done:"已套用。請重新開啟 Synology Drive Client 讓規則生效。", restored:"已還原。請重新開啟 Synology Drive Client。", backup:"備份", failed:"失敗", closed:"工具已關閉，可以關掉這個分頁。", lost:"工具已停止，請重新執行。", pick:"請至少選擇一個 Session 和一組規則。", confirmOverwrite:"確定要完全覆蓋？原本的自訂規則會消失（會先備份）。", confirmRestore:"確定要還原這個備份？目前的規則會先備份。", unverified:"實驗性：尚未確認 Synology 會保留這條規則", previewFirst:"請先按「預覽變動」確認內容，勾選有變動時也要重新預覽。", error:"發生錯誤：",
+    g:{ git:["Git 資料夾","資料庫逐檔同步會損壞 repo，程式碼請用 git push／pull。"], worktrees:["Git 工作樹資料夾","工作樹指標是絕對路徑，到別台機器必壞。"], gitPointerFile:["Git 工作樹的 .git 檔案","資料夾規則擋不到這個指標檔。"], fankeel:["fankeel 狀態","一直重寫又含絕對路徑，換機請用 migrate.js 打包。"], node:["Node 套件","npm install 就能重建，且含平台專屬檔案。"], python:["Python 環境與快取","虛擬環境換機器會壞，快取可自動重建。"], build:["建置輸出","可從原始碼重新產生，又大又常變。"], tools:["工具與 IDE 快取","多半只對這台機器有意義。"], system:["系統與暫存項目","NAS、Windows 的系統項目，以及暫存檔和捷徑。"] } },
+  en: { title:"Synology Drive Filter Tool", subtitle:"Scan local settings, choose what to exclude, and apply with a backup. Everything stays on this computer.", sessions:"Sessions and synced folders", mode:"How to apply", merge:"Merge (recommended)", mergeHint:"Adds only the selected rules and keeps every rule you already have.", overwrite:"Overwrite", overwriteHint:"Replaces the whole file with the built-in rules. Your custom rules are lost.", groups:"Rule groups", preview:"Preview changes", apply:"Back up and apply", rollback:"Restore a backup", restore:"Restore", finish:"Finish and close", lang:"繁體中文", unknownRoot:"Synced folder unknown", missing:n=>`${n} rule group${n===1?"":"s"} missing`, complete:"All rule groups present", current:"Current rules", backupsNone:"No backups", notInstalled:"Synology Drive Client settings were not found. Install it and set up sync first.", noSessions:"No sessions found. Set up sync in Synology Drive Client first.", running:"Synology Drive is running. Quit it from the system tray before applying.", waiting:"Quit Synology Drive from the system tray (do not force-kill it in Task Manager). This continues automatically once it has closed.", cancel:"Cancel", noChange:"No changes", add:"Add", remove:"Remove", overwriteWarn:"Warning: this session will lose some rules.", done:"Applied. Reopen Synology Drive Client for the rules to take effect.", restored:"Restored. Reopen Synology Drive Client.", backup:"Backup", failed:"Failed", closed:"The tool has stopped. You can close this tab.", lost:"The tool has stopped. Run it again.", pick:"Select at least one session and one rule group.", confirmOverwrite:"Overwrite completely? Your custom rules will be lost (a backup is made first).", confirmRestore:"Restore this backup? Current rules are backed up first.", unverified:"Experimental: not yet confirmed that Synology keeps this rule", previewFirst:"Press Preview changes first, and again after changing a selection.", error:"Error: ",
+    g:{ git:["Git folders","Syncing the database file by file corrupts repos. Use git push and pull."], worktrees:["Git worktree folders","Worktree pointers are absolute paths and break on another machine."], gitPointerFile:["Git worktree .git files","Folder rules cannot catch this pointer file."], fankeel:["fankeel state","Rewritten constantly and holds absolute paths. Move it with migrate.js."], node:["Node packages","Rebuilt by npm install and contain platform-specific files."], python:["Python environments and caches","Virtual environments break across machines; caches rebuild themselves."], build:["Build output","Regenerated from source, large and changing often."], tools:["Tool and IDE caches","Mostly meaningful on this machine only."], system:["System and temporary items","NAS and Windows system items, temporary files and shortcuts."] } }
+};
+
+const token = new URLSearchParams(location.search).get("t");
+history.replaceState(null, "", location.pathname);
+let lang = (navigator.language || "").toLowerCase().startsWith("zh") ? "zh" : "en";
+let scan = null, previewed = false, waitTimer = null, stopped = false;
+const $ = id => document.getElementById(id);
+const T = () => I18N[lang];
+const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text !== undefined) n.textContent = text; return n; };
+
+async function api(path, body) {
+  const res = await fetch(path, { method:"POST", headers:{ "X-Token":token, "Content-Type":"application/json" }, body: body ? JSON.stringify(body) : undefined });
+  const data = await res.json();
+  return { status: res.status, data };
+}
+function say(text, withCancel) {
+  const box = $("status"); box.replaceChildren();
+  if (!text) return;
+  const n = el("div", "notice", text); box.append(n);
+  if (withCancel) { const b = el("button", "", T().cancel); b.type = "button"; b.style.marginLeft = "12px"; b.onclick = stopWaiting; n.append(b); }
+}
+function stopWaiting() { clearInterval(waitTimer); waitTimer = null; say(""); }
+function fail(e) { say(T().error + (e.message || e)); }
+function selected(name) { return [...document.querySelectorAll(`input[name=${name}]:checked`)].map(i => i.value); }
+function request() { const mode = selected("mode")[0]; return { mode, sessions: selected("session"), groups: mode === "merge" ? selected("group") : [] }; }
+function invalidate() { previewed = false; $("preview").replaceChildren(); }
+
+function chips(parent, values) { values.forEach(v => parent.append(el("code", "", v))); }
+function render() {
+  const t = T();
+  document.documentElement.lang = lang === "zh" ? "zh-Hant" : "en";
+  document.querySelectorAll("[data-t]").forEach(n => n.textContent = t[n.dataset.t]);
+  $("lang").textContent = t.lang;
+  if (!scan) return;
+  const keep = { s:new Set(selected("session")), g:new Set(selected("group")), first:!$("sessions").children.length };
+
+  const sessions = $("sessions"); sessions.replaceChildren();
+  scan.sessions.forEach(s => {
+    const row = el("div", "item"), box = el("input"); box.type = "checkbox"; box.name = "session"; box.value = s.id; box.id = "s" + s.id;
+    box.checked = keep.first ? !!s.missing.length : keep.s.has(s.id); box.onchange = invalidate;
+    const body = el("div"), title = el("label", "title", `Session ${s.id} · ${s.root || t.unknownRoot}`); title.htmlFor = box.id;
+    const details = el("details"); details.append(el("summary", "", t.current));
+    s.current.forEach(c => { const p = el("p"); p.append(el("span", "muted", `[${c.section}] ${c.key}  `)); chips(p, c.values); details.append(p); });
+    body.append(title, el("p", "muted", s.missing.length ? t.missing(s.missing.length) : t.complete), details);
+    row.append(box, body); sessions.append(row);
+  });
+
+  const groups = $("groups"); groups.replaceChildren();
+  scan.groups.forEach(g => {
+    const row = el("div", "item"), box = el("input"); box.type = "checkbox"; box.name = "group"; box.value = g.id; box.id = "g" + g.id;
+    box.checked = keep.first ? g.default : keep.g.has(g.id); box.onchange = invalidate;
+    const [name, why] = t.g[g.id], body = el("div"), title = el("label", "title", name); title.htmlFor = box.id;
+    body.append(title, el("p", "muted", why));
+    if (g.id === "gitPointerFile") body.append(el("p", "muted", t.unverified));
+    chips(body, [...g.directories.map(d => d + "/"), ...g.fileNames, ...g.fileSuffixes.map(x => "*" + x)]);
+    row.append(box, body); groups.append(row);
+  });
+
+  const roll = $("rollback"); roll.replaceChildren();
+  scan.sessions.forEach(s => {
+    const row = el("div", "item"), body = el("div"); body.append(el("div", "title", `Session ${s.id}`));
+    if (!s.backups.length) body.append(el("p", "muted", t.backupsNone));
+    else {
+      const pick = el("select"); s.backups.forEach(b => { const o = el("option", "", b); o.value = b; pick.append(o); });
+      const go = el("button", "", t.restore); go.type = "button"; go.style.marginLeft = "8px"; go.onclick = () => restore(s.id, pick.value);
+      body.append(pick, go);
+    }
+    row.append(body); roll.append(row);
+  });
+  $("groupsBlock").hidden = selected("mode")[0] !== "merge";
+}
+
+async function load() {
+  const { data } = await api("/api/scan");
+  scan = data; render();
+  if (!data.installed) return say(T().notInstalled);
+  if (!data.sessions.length) return say(T().noSessions);
+  $("app").hidden = false; render();
+  say(data.running.length ? T().running : "");
+}
+
+async function preview() {
+  const req = request();
+  if (!req.sessions.length || (req.mode === "merge" && !req.groups.length)) return say(T().pick);
+  const { status, data } = await api("/api/preview", req);
+  if (status !== 200) return say(T().error + data.error);
+  const t = T(), box = $("preview"); box.replaceChildren();
+  data.previews.forEach(p => {
+    box.append(el("h2", "", `Session ${p.id}`));
+    if (!p.changes.length) box.append(el("p", "muted", t.noChange));
+    if (p.changes.some(c => c.removed.length)) box.append(el("div", "notice", t.overwriteWarn));
+    p.changes.forEach(c => {
+      box.append(el("p", "muted", `[${c.section}] ${c.key}`));
+      if (c.added.length) { const r = el("p", "added", t.add + " "); chips(r, c.added); box.append(r); }
+      if (c.removed.length) { const r = el("p", "removed", t.remove + " "); chips(r, c.removed); box.append(r); }
+    });
+  });
+  previewed = true; say("");
+}
+
+function waitThen(action) {
+  say(T().waiting, true);
+  waitTimer = setInterval(async () => {
+    try {
+      const { data } = await api("/api/running");
+      if (!data.running.length) { stopWaiting(); await action(); }
+    } catch (e) { stopWaiting(); say(T().lost); }
+  }, 2000);
+}
+
+async function apply() {
+  if (waitTimer) return say(T().waiting, true);
+  if (!previewed) return say(T().previewFirst);
+  const req = request();
+  if (req.mode === "overwrite" && !confirm(T().confirmOverwrite)) return;
+  await runApply(req);
+}
+async function runApply(req) {
+  const { status, data } = await api("/api/apply", req);
+  if (status === 409) return waitThen(() => runApply(req).catch(fail));
+  if (status !== 200) return say(T().error + data.error);
+  await load(); invalidate();
+  const failed = data.results.filter(r => !r.ok);
+  say(failed.length ? `${T().failed}: ${failed.map(r => `Session ${r.id}: ${r.message}`).join("; ")}` : T().done);
+}
+
+async function restore(session, backup) {
+  if (waitTimer || !confirm(T().confirmRestore)) return;
+  await runRestore({ session, backup });
+}
+async function runRestore(req) {
+  const { status, data } = await api("/api/rollback", req);
+  if (status === 409) return waitThen(() => runRestore(req).catch(fail));
+  if (status !== 200) return say(T().error + data.error);
+  await load(); invalidate(); say(T().restored);
+}
+
+$("lang").onclick = () => { lang = lang === "zh" ? "en" : "zh"; render(); };
+document.querySelectorAll("input[name=mode]").forEach(r => r.onchange = () => { invalidate(); render(); });
+$("previewBtn").onclick = () => preview().catch(fail);
+$("applyBtn").onclick = () => apply().catch(fail);
+$("finish").onclick = async () => { stopped = true; clearInterval(waitTimer); try { await api("/api/shutdown"); } catch (e) {} $("app").hidden = true; $("finish").hidden = true; say(T().closed); };
+setInterval(() => { if (!stopped) api("/api/heartbeat").catch(() => { if (!stopped) { stopped = true; $("app").hidden = true; say(T().lost); } }); }, 10000);
+api("/api/heartbeat").catch(() => {});
+render();
+load().catch(fail);
+</script>
+</body>
+</html>
